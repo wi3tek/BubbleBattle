@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: bubble-battle
+  data:
+    mongodb:
+      authentication-database: admin
+      auto-index-creation: true
+      ssl:
+        enabled: false
+      host: localhost
+      port: 27017
+      database: BUBBLE_BATTLE_DEV
+game:
+  settings:
+    start-bubble-amount: 10000
+
+server.port: 8088
