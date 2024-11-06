@@ -15,6 +15,7 @@ public class TeamData {
     private TeamColor teamColor;
     private int bubbleAmount;
     private int bubbleStakesAmount;
+    private boolean highestStakes;
     private boolean isActive;
     private QuestionData activeQuestion;
 }

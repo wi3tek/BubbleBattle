@@ -3,6 +3,7 @@ package pl.pw.bubblebattle.service.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import pl.pw.bubblebattle.api.model.CreateGameRequest;
+import pl.pw.bubblebattle.api.model.GameItem;
 import pl.pw.bubblebattle.api.model.GameResponse;
 import pl.pw.bubblebattle.api.model.TeamData;
 import pl.pw.bubblebattle.api.model.enums.GameStage;
@@ -53,5 +54,9 @@ public interface BubbleBattleMapper {
                 .createdBy( DEFAULT_USER )
                 .build();
     }
+
+    @Mapping( source = "id", target = "gameId")
+    @Mapping( source = "creationDate", target = "date")
+    GameItem mapToGameItem(Game source);
 
 }

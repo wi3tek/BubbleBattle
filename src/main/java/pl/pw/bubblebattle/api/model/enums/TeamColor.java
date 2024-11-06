@@ -7,10 +7,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum TeamColor {
 
-    BLUE( false ),
-    GREEN( false ),
-    YELLOW( false ),
-    BLACK( true );
+    BLUE( 1,false ),
+    GREEN( 2,false ),
+    YELLOW( 3,false ),
+    BLACK( 4,true );
 
+    private final int order;
     private final boolean master;
 }

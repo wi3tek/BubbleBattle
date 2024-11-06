@@ -8,21 +8,19 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import pl.pw.bubblebattle.api.model.GameResponse;
 import pl.pw.bubblebattle.infrastructure.SseEmitterManager;
 import pl.pw.bubblebattle.service.mapper.BubbleBattleMapper;
-import pl.pw.bubblebattle.storage.documents.Game;
 import pl.pw.bubblebattle.storage.service.GameDatabaseService;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class InitGameService {
+public class ParticipantGameService {
 
     private final GameDatabaseService gameDatabaseService;
-    private final BubbleBattleMapper mapper = Mappers.getMapper(BubbleBattleMapper.class);
+    private final BubbleBattleMapper mapper = Mappers.getMapper( BubbleBattleMapper.class );
 
-    public SseEmitter initGame(String gameId, boolean isHost) {
-        SseEmitter emitter = new SseEmitter();
-        log.info( "Emitter created with timeout {} for gameId {}", emitter.getTimeout(), gameId );
-        SseEmitterManager.addEmitter( gameId,emitter );
+    public SseEmitter subscribeGame(String gameId) {
+        SseEmitterManager.addEmitter( gameId );
+        SseEmitter emitter = SseEmitterManager.getEmitter( gameId );
 
         // Set a timeout for the SSE connection (optional)
         emitter.onTimeout(() -> {
@@ -36,15 +34,18 @@ public class InitGameService {
             log.info("Emitter completed");
             SseEmitterManager.removeEmitter(gameId);
         });
+
         return emitter;
+
     }
 
-    private GameResponse initParticipantGame(Game gameData) {
-        return mapper.map(gameData  );
+    public GameResponse initGame(String gameId) {
+        GameResponse gameResponse = mapper.map( this.gameDatabaseService.read( gameId ) );
+
+        gameResponse.markHighestStakes( gameResponse.getTeams() );
+
+        return gameResponse;
     }
 
 
-    private GameResponse initHostGame(Game gameData) {
-        return mapper.map( gameData);
-    }
 }

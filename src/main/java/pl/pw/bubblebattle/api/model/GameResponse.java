@@ -6,6 +6,7 @@ import pl.pw.bubblebattle.api.model.enums.GameStage;
 import pl.pw.bubblebattle.api.model.enums.RoundStage;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
@@ -22,5 +23,25 @@ public class GameResponse extends BaseResponse {
     private RoundStage roundStage;
     private List<TeamData> teams;
     private Integer bubbleStakes;
+
+    public void markHighestStakes(List<TeamData> teamData) {
+        int highestStakes = teamData.stream().map( TeamData::getBubbleStakesAmount ).max( Integer::compareTo ).orElse( 0 );
+        teamData.forEach( team -> {
+                    if (team.getBubbleStakesAmount() == highestStakes)
+                        team.setHighestStakes( true );
+
+                    if(highestStakes==0) {
+                        team.setHighestStakes( false );
+                    }
+
+                }
+        );
+        this.teams = teamData;
+        this.sortByOrder();
+    }
+
+    public void sortByOrder() {
+        this.teams.sort( Comparator.comparing( t -> t.getTeamColor().getOrder() ) );
+    }
 
 }

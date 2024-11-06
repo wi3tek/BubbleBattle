@@ -7,6 +7,8 @@ import pl.pw.bubblebattle.infrastructure.exception.BubbleBattleException;
 import pl.pw.bubblebattle.storage.documents.Game;
 import pl.pw.bubblebattle.storage.repository.GameRepo;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class GameDatabaseService {
@@ -31,4 +33,7 @@ public class GameDatabaseService {
         return gameRepo.findById( gameId ).orElseThrow( () -> new BubbleBattleException( "Not found" ) );
     }
 
+    public List<Game> getAllGames() {
+        return gameRepo.findAll();
+    }
 }

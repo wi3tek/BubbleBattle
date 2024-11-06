@@ -4,11 +4,13 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
+@Getter
 public enum GameStage {
 
+    BEFORE_GAME( 0 ),
     REGULAR( 7 ),
-    FINAL( 5 ),;
+    FINAL( 5 );
 
-    @Getter
+
     private final int maxRoundNumber;
 }
