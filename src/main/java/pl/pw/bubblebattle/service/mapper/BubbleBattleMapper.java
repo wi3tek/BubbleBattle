@@ -19,7 +19,7 @@ import java.util.Arrays;
 public interface BubbleBattleMapper {
 
 
-    int START_BUBBLE_AMOUNT = 10000;
+    int START_BUBBLE_AMOUNT = 0;
     int START_BUBBLE_STAKES = 0;
     String DEFAULT_USER = "SYSTEM";
 

@@ -16,7 +16,7 @@ public class ApplicationController {
 
     private final GameService gameService;
 
-    @GetMapping("/createGame")
+    @PostMapping("/createGame")
     public GameResponse createGame(
             @RequestBody CreateGameRequest request
     ) throws BubbleBattleException {
