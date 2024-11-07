@@ -37,7 +37,7 @@ public interface BubbleBattleMapper {
         return Game.builder()
                 .name( request.getName() )
                 .roundStage( RoundStage.ROUND_SUMMARY.name() )
-                .stageQuestionNumber( 0 )
+                .roundNumber( 0 )
                 .gameStage( GameStage.REGULAR.name() )
                 .teams( Arrays.stream( TeamColor.values() )
                         .map( teamColor -> Team.builder()

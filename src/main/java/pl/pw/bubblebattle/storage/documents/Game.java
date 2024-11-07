@@ -24,7 +24,7 @@ public class Game {
     @Indexed(unique = true)
     private String name;
     private String gameStage;
-    private int stageQuestionNumber;
+    private int roundNumber;
     private String roundStage;
     private List<Team> teams;
     private Stakes stakes;

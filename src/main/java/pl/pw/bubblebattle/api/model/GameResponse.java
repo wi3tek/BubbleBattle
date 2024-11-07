@@ -21,8 +21,10 @@ public class GameResponse extends BaseResponse {
     private LocalDate date;
     private GameStage gameStage;
     private RoundStage roundStage;
+    private int roundNumber;
     private List<TeamData> teams;
     private Integer bubbleStakes;
+    private List<HostAction> hostActions;
 
     public void markHighestStakes(List<TeamData> teamData) {
         int highestStakes = teamData.stream().map( TeamData::getBubbleStakesAmount ).max( Integer::compareTo ).orElse( 0 );

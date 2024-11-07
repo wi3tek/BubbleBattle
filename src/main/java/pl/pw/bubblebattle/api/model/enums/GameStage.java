@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 @Getter
 public enum GameStage {
 
-    BEFORE_GAME( 0 ),
     REGULAR( 7 ),
     FINAL( 5 );
 

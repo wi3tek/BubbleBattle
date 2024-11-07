@@ -38,14 +38,4 @@ public class ParticipantGameService {
         return emitter;
 
     }
-
-    public GameResponse initGame(String gameId) {
-        GameResponse gameResponse = mapper.map( this.gameDatabaseService.read( gameId ) );
-
-        gameResponse.markHighestStakes( gameResponse.getTeams() );
-
-        return gameResponse;
-    }
-
-
 }

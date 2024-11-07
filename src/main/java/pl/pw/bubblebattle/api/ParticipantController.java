@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import pl.pw.bubblebattle.api.model.GameResponse;
 import pl.pw.bubblebattle.infrastructure.exception.BubbleBattleException;
+import pl.pw.bubblebattle.service.GameService;
 import pl.pw.bubblebattle.service.ParticipantGameService;
 
 @RestController
@@ -13,6 +14,7 @@ import pl.pw.bubblebattle.service.ParticipantGameService;
 public class ParticipantController {
 
     private final ParticipantGameService participantGameService;
+    private final GameService gameService;
 
 
     @CrossOrigin
@@ -28,6 +30,6 @@ public class ParticipantController {
     public GameResponse initParticipantGame(
             @PathVariable String gameId
     ) throws BubbleBattleException {
-        return participantGameService.initGame( gameId );
+        return gameService.initGame( gameId, false );
     }
 }

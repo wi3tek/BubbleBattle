@@ -18,6 +18,7 @@ public class GameService {
 
     private final BubbleBattleMapper mapper = Mappers.getMapper( BubbleBattleMapper.class );
     private final GameDatabaseService gameDatabaseService;
+    private final HostActionService hostActionService;
 
     @Value("${game.settings.start-bubble-amount}")
     public Integer bubbleAmount;
@@ -40,5 +41,24 @@ public class GameService {
         Game game = this.gameDatabaseService.read( gameId );
         game.reset();
         gameDatabaseService.save( game );
+    }
+
+
+    public GameResponse initGame(String gameId, boolean isHost) {
+        GameResponse gameResponse = mapper.map( this.gameDatabaseService.read( gameId ) );
+        gameResponse.markHighestStakes( gameResponse.getTeams() );
+
+        if (!isHost) {
+            return gameResponse;
+        }
+        gameResponse.setHostActions(
+                hostActionService.prepareActions(
+                        gameResponse.getRoundStage(),
+                        gameResponse.getGameStage(),
+                        gameResponse.getRoundNumber()
+                )
+        );
+
+        return gameResponse;
     }
 }
