@@ -1,5 +1,6 @@
 package pl.pw.bubblebattle.storage.documents;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 @Data
@@ -9,7 +10,8 @@ public class Team  {
     private String color;
     private int bubbleAmount;
     private int bubbleStakesAmount;
-    private Boolean isActive;
+    @JsonProperty("isActive")
+    private boolean active;
     private Question activeQuestion;
 
 }

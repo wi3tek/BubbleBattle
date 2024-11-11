@@ -1,5 +1,6 @@
 package pl.pw.bubblebattle.storage.documents;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 @Data
@@ -7,6 +8,7 @@ import lombok.*;
 public class Answer  {
 
     private String value;
-    private Boolean isCorrect;
+    @JsonProperty("isCorrect")
+    private boolean correct;
 
 }

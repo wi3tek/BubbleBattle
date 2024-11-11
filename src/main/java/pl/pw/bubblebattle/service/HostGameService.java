@@ -6,6 +6,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import pl.pw.bubblebattle.api.model.ChangeStatusRequest;
 import pl.pw.bubblebattle.api.model.GameResponse;
+import pl.pw.bubblebattle.api.model.enums.RoundStage;
 import pl.pw.bubblebattle.infrastructure.SseEmitterManager;
 import pl.pw.bubblebattle.infrastructure.exception.BubbleBattleException;
 import pl.pw.bubblebattle.service.mapper.BubbleBattleMapper;
@@ -19,6 +20,8 @@ public class HostGameService {
 
     private final GameDatabaseService databaseService;
     private final BubbleBattleMapper mapper = Mappers.getMapper( BubbleBattleMapper.class );
+
+    private final HostActionService hostActionService;
 
 
     @Async
@@ -42,5 +45,20 @@ public class HostGameService {
         GameResponse gameResponse = mapper.map( game );
         gameResponse.markHighestStakes( gameResponse.getTeams() );
         SseEmitterManager.sendSseEventToClients( gameId, gameResponse );
+    }
+
+    public GameResponse startGame(String gameId) {
+        Game game = this.databaseService.read( gameId );
+        game.getTeams()
+                .forEach( team -> team.setBubbleAmount( 10000 ) );
+        game.setRoundStage( RoundStage.CATEGORY_SELECTION.name() );
+        game.incrementRoundNumber();
+
+        GameResponse gameResponse = mapper.map( game );
+        databaseService.save( game);
+        SseEmitterManager.sendSseEventToClients( gameId, gameResponse );
+        gameResponse.setHostActions( hostActionService.prepareActions( gameResponse ) );
+
+        return gameResponse;
     }
 }

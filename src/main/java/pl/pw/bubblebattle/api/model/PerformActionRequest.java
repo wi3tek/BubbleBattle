@@ -4,16 +4,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import pl.pw.bubblebattle.api.model.enums.Action;
 
-import java.time.LocalDateTime;
-
-@Builder
 @Data
-@AllArgsConstructor
+@Builder
 @NoArgsConstructor
-public class GameItem {
+@AllArgsConstructor
+public class PerformActionRequest {
 
     private String gameId;
-    private String name;
-    private LocalDateTime date;
+    private Action action;
 }

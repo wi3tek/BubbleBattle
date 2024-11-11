@@ -13,5 +13,6 @@ spring:
 game:
   settings:
     start-bubble-amount: 10000
+  question.path:
 
 server.port: 8088

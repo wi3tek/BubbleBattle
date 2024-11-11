@@ -44,7 +44,7 @@ public interface BubbleBattleMapper {
                                 .activeQuestion( null )
                                 .bubbleAmount( START_BUBBLE_AMOUNT )
                                 .bubbleStakesAmount( START_BUBBLE_STAKES )
-                                .isActive( !teamColor.isMaster() )
+                                .active( !teamColor.isMaster() )
                                 .color( teamColor.name() )
                                 .build() )
                         .toList() )

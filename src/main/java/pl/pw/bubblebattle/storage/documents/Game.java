@@ -61,4 +61,8 @@ public class Game {
             team.setBubbleStakesAmount( 0 );
         } );
     }
+
+    public void incrementRoundNumber() {
+        this.roundNumber++;
+    }
 }
