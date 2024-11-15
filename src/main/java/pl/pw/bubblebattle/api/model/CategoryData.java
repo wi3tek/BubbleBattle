@@ -4,14 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import pl.pw.bubblebattle.api.model.enums.Action;
 
 @Data
-@Builder
-@NoArgsConstructor
+@Builder(toBuilder = true)
 @AllArgsConstructor
-public class PerformActionRequest {
+@NoArgsConstructor
+public class CategoryData {
 
-    private String gameId;
-    private Action action;
+    private String value;
+    private int count;
 }

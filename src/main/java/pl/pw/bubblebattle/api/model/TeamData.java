@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import pl.pw.bubblebattle.api.model.enums.TeamColor;
 
+import java.util.Optional;
+
 @Data
 @Builder(toBuilder = true)
 @AllArgsConstructor
@@ -16,6 +18,10 @@ public class TeamData {
     private int bubbleAmount;
     private int bubbleStakesAmount;
     private boolean highestStakes;
-    private boolean isActive;
+    private boolean active;
     private QuestionData activeQuestion;
+
+    public void shuffleAnswers() {
+        Optional.ofNullable(activeQuestion).ifPresent( x -> x.shuffleAnswers() );
+    }
 }

@@ -2,16 +2,12 @@ package pl.pw.bubblebattle.service.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import pl.pw.bubblebattle.api.model.CreateGameRequest;
-import pl.pw.bubblebattle.api.model.GameItem;
-import pl.pw.bubblebattle.api.model.GameResponse;
-import pl.pw.bubblebattle.api.model.TeamData;
+import org.mapstruct.Named;
+import pl.pw.bubblebattle.api.model.*;
 import pl.pw.bubblebattle.api.model.enums.GameStage;
 import pl.pw.bubblebattle.api.model.enums.RoundStage;
 import pl.pw.bubblebattle.api.model.enums.TeamColor;
-import pl.pw.bubblebattle.storage.documents.Game;
-import pl.pw.bubblebattle.storage.documents.Stakes;
-import pl.pw.bubblebattle.storage.documents.Team;
+import pl.pw.bubblebattle.storage.documents.*;
 
 import java.util.Arrays;
 
@@ -26,9 +22,9 @@ public interface BubbleBattleMapper {
     @Mapping( source = "creationDate", target = "date")
     @Mapping(source ="id", target = "gameId")
     @Mapping(source = "stakes.bubbleAmount", target = "bubbleStakes")
+    @Mapping(source = "currentCategory", target = "currentCategory")
+    @Mapping( source = "stakes.auctionWinner", target = "auctionWinner")
     GameResponse map(Game source);
-
-    Team  map(TeamData source);
 
     @Mapping( source = "color", target = "teamColor")
     TeamData map(Team source);
@@ -57,6 +53,17 @@ public interface BubbleBattleMapper {
 
     @Mapping( source = "id", target = "gameId")
     @Mapping( source = "creationDate", target = "date")
+    @Mapping(target = "roundDescription", source = "roundStage", qualifiedByName = "prepareRoundDescription")
     GameItem mapToGameItem(Game source);
+
+    @Named("prepareRoundDescription")
+    default String prepareRoundDescription (String roundStage) {
+        return RoundStage.valueOf( roundStage ).getDescription();
+    }
+
+    QuestionData map(Question source);
+
+    AnswerData map (Answer source);
+
 
 }

@@ -4,16 +4,14 @@ import lombok.RequiredArgsConstructor;
 import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import pl.pw.bubblebattle.api.model.CreateGameRequest;
-import pl.pw.bubblebattle.api.model.GameItem;
-import pl.pw.bubblebattle.api.model.GameResponse;
-import pl.pw.bubblebattle.api.model.GetGamesResponse;
+import pl.pw.bubblebattle.api.model.*;
 import pl.pw.bubblebattle.infrastructure.exception.BubbleBattleException;
 import pl.pw.bubblebattle.service.mapper.BubbleBattleMapper;
 import pl.pw.bubblebattle.storage.documents.Game;
 import pl.pw.bubblebattle.storage.service.GameDatabaseService;
 
 import java.util.Comparator;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +20,7 @@ public class GameService {
     private final BubbleBattleMapper mapper = Mappers.getMapper( BubbleBattleMapper.class );
     private final GameDatabaseService gameDatabaseService;
     private final HostActionService hostActionService;
+    private final QuestionService questionService;
 
     @Value("${game.settings.start-bubble-amount}")
     public Integer bubbleAmount;
@@ -50,6 +49,7 @@ public class GameService {
 
     public GameResponse initGame(String gameId, boolean isHost) {
         GameResponse gameResponse = mapper.map( this.gameDatabaseService.read( gameId ) );
+        Optional.ofNullable(gameResponse.getAuctionWinner()).ifPresent( TeamData::shuffleAnswers );
         gameResponse.markHighestStakes( gameResponse.getTeams() );
 
         if (!isHost) {
@@ -62,7 +62,7 @@ public class GameService {
                         gameResponse.getRoundNumber()
                 )
         );
-
+        questionService.prepareQuestionsAndCategories(gameResponse);
         return gameResponse;
     }
 }

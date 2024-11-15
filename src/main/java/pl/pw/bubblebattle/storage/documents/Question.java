@@ -29,6 +29,7 @@ public class Question  {
     private List<Answer> answers;
     private boolean used;
     private String category;
+//    private int remainingTime; TODO do przemyślenia
 
     @CreatedDate
     private LocalDateTime creationDate;

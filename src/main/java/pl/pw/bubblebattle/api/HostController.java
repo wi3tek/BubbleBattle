@@ -2,13 +2,14 @@ package pl.pw.bubblebattle.api;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import pl.pw.bubblebattle.api.model.ChangeStatusRequest;
 import pl.pw.bubblebattle.api.model.GameResponse;
-import pl.pw.bubblebattle.api.model.PerformActionRequest;
+import pl.pw.bubblebattle.api.model.RaiseStakesRequest;
+import pl.pw.bubblebattle.api.model.actions.PerformActionRequest;
 import pl.pw.bubblebattle.infrastructure.exception.BubbleBattleException;
+import pl.pw.bubblebattle.service.AuctionService;
 import pl.pw.bubblebattle.service.GameService;
 import pl.pw.bubblebattle.service.HostGameService;
-import pl.pw.bubblebattle.service.PerformActionManaager;
+import pl.pw.bubblebattle.service.PerformActionManager;
 
 @RestController
 @RequestMapping("/bubble-battle/api/host")
@@ -18,14 +19,15 @@ public class HostController {
 
     private final HostGameService hostGameService;
     private final GameService gameService;
-    private final PerformActionManaager performActionManaager;
+    private final PerformActionManager performActionManager;
+    private final AuctionService auctionService;
 
-    @PostMapping("/changeStatus")
+    @PostMapping("/raiseStakes")
     @CrossOrigin
-    public void changeStatusTest(
-            @RequestBody ChangeStatusRequest request
+    public void raiseStakes(
+            @RequestBody RaiseStakesRequest request
     ) {
-        hostGameService.changeStatusTest( request );
+        auctionService.raiseStakes( request );
     }
 
     @GetMapping("/init/{gameId}")
@@ -40,6 +42,6 @@ public class HostController {
     public GameResponse startGame(
             @RequestBody PerformActionRequest request
             ) {
-        return performActionManaager.performAction( request );
+        return performActionManager.performAction( request );
     }
 }

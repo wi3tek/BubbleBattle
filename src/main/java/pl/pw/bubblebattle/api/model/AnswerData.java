@@ -12,5 +12,5 @@ import lombok.NoArgsConstructor;
 public class AnswerData {
 
     private String value;
-    private boolean isCorrect;
+    private boolean correct;
 }

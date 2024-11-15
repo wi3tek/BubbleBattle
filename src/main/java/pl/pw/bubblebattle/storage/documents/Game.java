@@ -8,11 +8,13 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import pl.pw.bubblebattle.api.model.enums.TeamColor;
 import pl.pw.bubblebattle.infrastructure.exception.BubbleBattleException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Document("Game")
 @Data
@@ -28,6 +30,8 @@ public class Game {
     private String roundStage;
     private List<Team> teams;
     private Stakes stakes;
+    private String currentCategory;
+    private int highestBidAmount;
 
     @CreatedDate
     private LocalDateTime creationDate;
@@ -40,15 +44,15 @@ public class Game {
 
 
     public void updateStakes(int bubblesAmount) {
-        this.stakes.setBubbleAmount( this.stakes.getBubbleAmount() + bubblesAmount);
+        this.stakes.setBubbleAmount( this.stakes.getBubbleAmount() + bubblesAmount );
     }
 
     public void updateTeam(Team team) {
-        List<Team> objectTeams = new ArrayList<>(this.teams);
+        List<Team> objectTeams = new ArrayList<>( this.teams );
 
         Team teamT = this.teams.stream().filter( t -> t.getColor().equals( team.getColor() ) )
                 .findFirst()
-                .orElseThrow(() -> new BubbleBattleException( "wront team color "+team.getColor() ) ) ;
+                .orElseThrow( () -> new BubbleBattleException( "Wrong team color " + team.getColor() ) );
         objectTeams.remove( teamT );
         objectTeams.add( team );
         this.teams = objectTeams;
@@ -64,5 +68,98 @@ public class Game {
 
     public void incrementRoundNumber() {
         this.roundNumber++;
+    }
+
+    public void startAuction() {
+        this.setHighestBidAmount( 500 );
+        this.teams.stream()
+                .filter( Team::isActive )
+                .forEach( team -> {
+                    int bubbles = team.getBubbleAmount();
+                    int teamStakes = team.getBubbleStakesAmount();
+                    team.setBubbleAmount( bubbles - 500 );
+                    team.setBubbleStakesAmount( teamStakes + 500 );
+                    this.stakes.setBubbleAmount( this.stakes.getBubbleAmount() + 500 );
+                } );
+    }
+
+    public void subtractBubbles(TeamColor teamColor, int price) {
+        getTeamByColor( teamColor )
+                .filter( team -> team.getBubbleAmount() >= price )
+                .ifPresent( team -> team.setBubbleAmount( team.getBubbleAmount() - price ) );
+    }
+
+    private Optional<Team> getTeamByColor(TeamColor teamColor) {
+        return this.getTeams().stream()
+                .filter( Team::isActive )
+                .filter( team -> team.getColor().equals( teamColor.name() ) )
+                .findFirst();
+    }
+
+    public void updateTeamBubbles(TeamColor teamColor, int bubbleAmount) {
+        this.teams.stream().filter( Team::isActive )
+                .filter(team -> teamColor.name().equals( team.getColor() ))
+                .findFirst()
+                .ifPresent( team -> team.setBubbleAmount( team.getBubbleAmount() + bubbleAmount ) );
+    }
+
+    public void resetStakes() {
+        this.teams.stream()
+                .filter( Team::isActive )
+                .forEach( team -> {
+                    team.setBubbleStakesAmount( 0 );
+                    team.setActiveQuestion( null );
+                } );
+    }
+
+    public void checkTeamsAfterRound() {
+        this.teams.stream()
+                .filter( Team::isActive )
+                .filter(team -> team.getBubbleAmount() <600 )
+                .forEach( team -> team.setActive( false ) );
+    }
+
+    public void prepareTeamsToFinal() {
+        int maxBubblesAmount = this.teams.stream()
+                .filter( Team::isActive )
+                .mapToInt( Team::getBubbleAmount )
+                .max()
+                .orElseThrow( () -> new BubbleBattleException( "Cannot estimate max bubbles amount" ) );
+
+        if(
+                this.teams.stream()
+                .filter( Team::isActive)
+                .filter(team -> team.getBubbleAmount()== maxBubblesAmount)
+                .count() > 2
+        ) {
+            throw new BubbleBattleException( "More than one team has max bubbles amount "+maxBubblesAmount );
+        }
+
+        int currentStakesAmount = this.stakes.getBubbleAmount();
+        int finalBubblesAmount = maxBubblesAmount;
+
+        for (Team team : teams) {
+            if (team.getBubbleAmount() != maxBubblesAmount) {
+                team.setActive( false );
+            }
+
+            if (team.getBubbleAmount() == maxBubblesAmount) {
+                if(!team.getColor().equals( this.stakes.getAuctionWinner().getColor())) {
+                    team.addBubbles( currentStakesAmount );
+                }
+                finalBubblesAmount = team.getBubbleAmount();
+            }
+        }
+
+        int masterBubblesAmount = finalBubblesAmount;
+        this.teams.stream()
+                .filter( team -> TeamColor.BLACK.name().equals(  team.getColor() ))
+                .findFirst()
+                .ifPresent( team -> {
+                    team.setActive( true );
+                    team.setBubbleAmount( masterBubblesAmount );
+                });
+
+        this.stakes.setAuctionWinner( null );
     }
 }

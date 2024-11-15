@@ -1,6 +1,9 @@
 package pl.pw.bubblebattle.api.model;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import pl.pw.bubblebattle.api.model.enums.GameStage;
 import pl.pw.bubblebattle.api.model.enums.RoundStage;
@@ -25,25 +28,34 @@ public class GameResponse extends BaseResponse {
     private List<TeamData> teams;
     private Integer bubbleStakes;
     private List<HostAction> hostActions;
+    private List<CategoryData> categoryList;
+    private String currentCategory;
+    private int highestBidAmount;
+    private TeamData auctionWinner;
 
     public void markHighestStakes(List<TeamData> teamData) {
-        int highestStakes = teamData.stream().map( TeamData::getBubbleStakesAmount ).max( Integer::compareTo ).orElse( 0 );
+        int highestStakes = teamData.stream()
+                .map( TeamData::getBubbleStakesAmount ).max( Integer::compareTo ).orElse( 0 );
         teamData.forEach( team -> {
                     if (team.getBubbleStakesAmount() == highestStakes)
                         team.setHighestStakes( true );
 
-                    if(highestStakes==0) {
+                    if (highestStakes == 0 || highestStakes == 500) {
                         team.setHighestStakes( false );
                     }
 
                 }
         );
         this.teams = teamData;
-        this.sortByOrder();
+        this.sortActiveByOrder();
     }
 
-    public void sortByOrder() {
-        this.teams.sort( Comparator.comparing( t -> t.getTeamColor().getOrder() ) );
-    }
+    public void sortActiveByOrder() {
+        this.setTeams( this.teams.stream()
+                .filter( TeamData::isActive )
+                .sorted( Comparator.comparing( t -> t.getTeamColor().getOrder() ) )
+                .toList()
+        );
 
+    }
 }

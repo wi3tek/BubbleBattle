@@ -9,5 +9,6 @@ import lombok.Data;
 public class Stakes  {
 
     private int bubbleAmount;
+    private Team auctionWinner;
 
 }

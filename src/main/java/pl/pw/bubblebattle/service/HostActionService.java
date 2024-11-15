@@ -20,7 +20,7 @@ public class HostActionService {
             int roundNumber
     ) {
 
-        if (RoundStage.ROUND_SUMMARY.equals( roundStage ) && roundNumber == 0) {
+        if (RoundStage.ROUND_SUMMARY.equals( roundStage ) && roundNumber == 0 && GameStage.REGULAR.equals( gameStage )) {
             return List.of( prepareHostAction( Action.START_GAME ) );
         }
 
@@ -29,7 +29,7 @@ public class HostActionService {
         }
 
         if (GameStage.FINAL.equals( gameStage ) && roundNumber == GameStage.FINAL.getMaxRoundNumber()) {
-            return List.of( prepareHostAction( Action.FINISH_ROUND ) );
+            return List.of( prepareHostAction( Action.FINISH_GAME ) );
         }
 
         return roundStage.getActions().stream()
