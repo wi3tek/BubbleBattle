@@ -19,7 +19,7 @@ public enum RoundStage {
     QUESTION(List.of(Action.SELL_ANSWERS,Action.ANSWER_THE_QUESTION), Constants.PYTANIE ),
     QUESTION_WITH_PROMPTS(List.of(Action.ANSWER_THE_QUESTION), Constants.PYTANIE ),
     AFTER_ANSWER(List.of(Action.FINISH_ROUND), Constants.PYTANIE ),
-    ROUND_SUMMARY(List.of(Action.CHOOSE_CATEGORY),"Koniec rundy");
+    ROUND_SUMMARY(List.of(Action.CHOOSE_CATEGORY, Action.GO_TO_THE_FINAL),"Koniec rundy");
 
 
     private final List<Action> actions;

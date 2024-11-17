@@ -60,8 +60,8 @@ public class AuctionService {
         game.updateStakes( difference );
         game.setHighestBidAmount( team.getBubbleStakesAmount() );
 
-        databaseService.save( game );
         roundStageService.updateAuctionStatus( game ,request.isFinalBid(), request.getTeamColor());
+        databaseService.save( game );
 
         GameResponse gameResponse = mapper.map( game );
         gameResponse.markHighestStakes( gameResponse.getTeams() );

@@ -55,13 +55,7 @@ public class GameService {
         if (!isHost) {
             return gameResponse;
         }
-        gameResponse.setHostActions(
-                hostActionService.prepareActions(
-                        gameResponse.getRoundStage(),
-                        gameResponse.getGameStage(),
-                        gameResponse.getRoundNumber()
-                )
-        );
+        gameResponse.setHostActions( hostActionService.prepareActions( gameResponse ) );
         questionService.prepareQuestionsAndCategories(gameResponse);
         return gameResponse;
     }

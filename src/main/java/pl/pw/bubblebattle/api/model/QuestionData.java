@@ -18,6 +18,7 @@ public class QuestionData {
     private String value;
     private String category;
     private List<AnswerData> answers;
+    private boolean answeredCorrect;
 
     public void shuffleAnswers() {
         if( answers == null) {

@@ -3,6 +3,7 @@ package pl.pw.bubblebattle.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pl.pw.bubblebattle.api.model.actions.PerformActionRequest;
+import pl.pw.bubblebattle.api.model.enums.Action;
 import pl.pw.bubblebattle.api.model.enums.TeamColor;
 import pl.pw.bubblebattle.storage.documents.Game;
 import pl.pw.bubblebattle.storage.documents.Team;
@@ -18,12 +19,12 @@ public class RoundStageService {
     public void updateAuctionStatus(Game game, boolean finalBid, TeamColor teamColor) {
         int highestBid = game.getHighestBidAmount();
         if(finalBid ||  !isPossibleToContinueBidding(game.getTeams(), highestBid, teamColor)) {
-            hostGameService.finishAuction( prepareRequest( game ) );
+            hostGameService.updateGame( prepareRequest( game ),game );
         }
     }
 
     private PerformActionRequest prepareRequest(Game game) {
-        return PerformActionRequest.builder().gameId( game.getId() ).build();
+        return PerformActionRequest.builder().gameId( game.getId() ).action( Action.FINISH_AUCTION ).build();
     }
 
     private boolean isPossibleToContinueBidding(List<Team> teams, int highestBid, TeamColor teamColor) {

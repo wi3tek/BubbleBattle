@@ -7,10 +7,12 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import pl.pw.bubblebattle.api.model.enums.GameStage;
 import pl.pw.bubblebattle.api.model.enums.RoundStage;
+import pl.pw.bubblebattle.api.model.enums.TeamColor;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Predicate;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -18,6 +20,12 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GameResponse extends BaseResponse {
+
+    private static final List<TeamColor> REGULAR_GAME_STAGE_TEAM_COLORS = List.of(
+            TeamColor.BLUE,
+            TeamColor.GREEN,
+            TeamColor.YELLOW
+    );
 
     private String gameId;
     private String name;
@@ -46,16 +54,24 @@ public class GameResponse extends BaseResponse {
 
                 }
         );
+
+
         this.teams = teamData;
         this.sortActiveByOrder();
     }
 
     public void sortActiveByOrder() {
+        Predicate<TeamData> predicate = x -> {
+            if(this.gameStage.equals( GameStage.REGULAR )) {
+                return REGULAR_GAME_STAGE_TEAM_COLORS.contains( x.getTeamColor() );
+            }
+
+            return x.isActive();
+        };
         this.setTeams( this.teams.stream()
-                .filter( TeamData::isActive )
+                .filter( predicate )
                 .sorted( Comparator.comparing( t -> t.getTeamColor().getOrder() ) )
                 .toList()
         );
-
     }
 }

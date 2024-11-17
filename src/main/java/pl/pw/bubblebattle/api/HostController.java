@@ -2,6 +2,7 @@ package pl.pw.bubblebattle.api;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import pl.pw.bubblebattle.api.model.CorrectBubblesRequest;
 import pl.pw.bubblebattle.api.model.GameResponse;
 import pl.pw.bubblebattle.api.model.RaiseStakesRequest;
 import pl.pw.bubblebattle.api.model.actions.PerformActionRequest;
@@ -43,5 +44,13 @@ public class HostController {
             @RequestBody PerformActionRequest request
             ) {
         return performActionManager.performAction( request );
+    }
+
+    @PostMapping("/correctBubbles")
+    @CrossOrigin
+    public void raiseStakes(
+            @RequestBody CorrectBubblesRequest request
+    ) {
+        hostGameService.correctBubbles( request );
     }
 }
