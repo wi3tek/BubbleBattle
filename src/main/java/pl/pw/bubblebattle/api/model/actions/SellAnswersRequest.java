@@ -12,4 +12,5 @@ public class SellAnswersRequest extends PerformActionRequest {
 
     private int price;
     private TeamColor teamColor;
+    private int questionRemainingSeconds;
 }

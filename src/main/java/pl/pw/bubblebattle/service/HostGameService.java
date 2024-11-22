@@ -7,11 +7,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.pw.bubblebattle.api.model.CorrectBubblesRequest;
 import pl.pw.bubblebattle.api.model.GameResponse;
+import pl.pw.bubblebattle.api.model.ReverseRestoreAuctionRequest;
 import pl.pw.bubblebattle.api.model.TeamData;
-import pl.pw.bubblebattle.api.model.actions.AnswerTheQuestionRequest;
-import pl.pw.bubblebattle.api.model.actions.ChooseCategoryRequest;
-import pl.pw.bubblebattle.api.model.actions.PerformActionRequest;
-import pl.pw.bubblebattle.api.model.actions.SellAnswersRequest;
+import pl.pw.bubblebattle.api.model.actions.*;
 import pl.pw.bubblebattle.api.model.enums.*;
 import pl.pw.bubblebattle.infrastructure.SseEmitterManager;
 import pl.pw.bubblebattle.infrastructure.exception.BubbleBattleException;
@@ -20,9 +18,11 @@ import pl.pw.bubblebattle.storage.documents.Game;
 import pl.pw.bubblebattle.storage.documents.Question;
 import pl.pw.bubblebattle.storage.documents.Stakes;
 import pl.pw.bubblebattle.storage.documents.Team;
+import pl.pw.bubblebattle.storage.service.AuctionDatabaseService;
 import pl.pw.bubblebattle.storage.service.GameDatabaseService;
 import pl.pw.bubblebattle.storage.service.QuestionDatabaseService;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -39,11 +39,27 @@ public class HostGameService {
     private final ValidatorService validatorService;
     private final HostActionService hostActionService;
     private final QuestionService questionService;
+    private final AuctionDatabaseService auctionDatabaseService;
 
     @Transactional
     public synchronized GameResponse startGame(String gameId) {
         Game game = this.databaseService.read( gameId );
         validatorService.validateGameBeforeAction( Action.START_GAME, game );
+        game.setRoundStage( RoundStage.ROUND_SUMMARY.name() );
+        GameResponse gameResponse = mapper.map( game );
+        databaseService.save( game );
+        gameResponse.sortActiveByOrder();
+        SseEmitterManager.sendSseEventToClients( gameId, gameResponse );
+        gameResponse.setHostActions( hostActionService.prepareActions( gameResponse ) );
+        questionService.prepareQuestionsAndCategories( gameResponse );
+        return gameResponse;
+    }
+
+
+    @Transactional
+    public synchronized GameResponse initBubbles(String gameId) {
+        Game game = this.databaseService.read( gameId );
+        validatorService.validateGameBeforeAction( Action.INIT_BUBBLES, game );
         game.getTeams()
                 .forEach( team -> team.setBubbleAmount( 10000 ) );
         game.setRoundStage( RoundStage.CATEGORY_SELECTION.name() );
@@ -52,9 +68,11 @@ public class HostGameService {
         GameResponse gameResponse = mapper.map( game );
         databaseService.save( game );
         gameResponse.sortActiveByOrder();
+        gameResponse.setMoneyUp( true );
         SseEmitterManager.sendSseEventToClients( gameId, gameResponse );
         gameResponse.setHostActions( hostActionService.prepareActions( gameResponse ) );
         questionService.prepareQuestionsAndCategories( gameResponse );
+
         return gameResponse;
     }
 
@@ -73,18 +91,22 @@ public class HostGameService {
         game.setCurrentCategory( data.getCategory() );
         databaseService.save( game );
 
-        return prepareGameResponse( game );
+        return prepareGameResponse( game, false );
     }
 
     @Transactional
     public GameResponse startAuction(PerformActionRequest request) {
         Game game = this.databaseService.read( request.getGameId() );
+        game.setCurrentAuctionHistory( null );
         validatorService.validateGameBeforeAction( request.getAction(), game );
         game.setRoundStage( RoundStage.AUCTION.name() );
         game.startAuction();
+
+        auctionDatabaseService.saveHistory( game, AuctionHistoryOption.INSERT );
+
         databaseService.save( game );
 
-        return prepareGameResponse( game );
+        return prepareGameResponse( game, false );
     }
 
     @Transactional
@@ -92,12 +114,11 @@ public class HostGameService {
         Game game = this.databaseService.read( request.getGameId() );
         updateGame( request, game );
         databaseService.save( game );
-        return prepareGameResponse( game );
+        return prepareGameResponse( game, false );
     }
 
     public void updateGame(PerformActionRequest request, Game game) {
         validatorService.validateGameBeforeAction( request.getAction(), game );
-        game.setRoundStage( RoundStage.AUCTION_COMPLETE.name() );
 
         if (game.getTeams().stream().filter( Team::isActive ).filter( team -> team.getBubbleStakesAmount() == game.getHighestBidAmount() ).count() > 1) {
             throw new BubbleBattleException( "More than one team has the same bid amount" );
@@ -107,19 +128,21 @@ public class HostGameService {
                 .filter( Team::isActive )
                 .filter( team -> team.getBubbleStakesAmount() == game.getHighestBidAmount() )
                 .findFirst()
-                .orElseThrow( () -> new BubbleBattleException( "Auction winner not found" ) );
+                .orElseThrow( () -> new BubbleBattleException( "AuctionHistory winner not found" ) );
         game.getStakes().setAuctionWinner( auctionWinner );
 
         if (SpecialCategory.getByValue( game.getCurrentCategory() ).isPresent()) {
             updateGameForSpecialCategories( game );
+        } else {
+            game.setRoundStage( RoundStage.AUCTION_COMPLETE.name() );
         }
     }
 
-
-    private GameResponse prepareGameResponse(Game game) {
+    private GameResponse prepareGameResponse(Game game, boolean moneyUp) {
         GameResponse gameResponse = mapper.map( game );
         gameResponse.sortActiveByOrder();
         gameResponse.markHighestStakes( gameResponse.getTeams() );
+        gameResponse.setMoneyUp( moneyUp );
         SseEmitterManager.sendSseEventToClients( game.getId(), gameResponse );
 
         if (RoundStage.ROUND_SUMMARY.equals( gameResponse.getRoundStage() )) {
@@ -128,6 +151,7 @@ public class HostGameService {
 
         gameResponse.setHostActions( hostActionService.prepareActions( gameResponse ) );
         Optional.ofNullable( gameResponse.getAuctionWinner() ).ifPresent( TeamData::shuffleAnswers );
+
         return gameResponse;
     }
 
@@ -142,7 +166,7 @@ public class HostGameService {
 
         game.getStakes().getAuctionWinner().setActiveQuestion( randomQuestion( questions ) );
         databaseService.save( game );
-        return prepareGameResponse( game );
+        return prepareGameResponse( game, false );
     }
 
     private Question randomQuestion(List<Question> questions) {
@@ -153,6 +177,7 @@ public class HostGameService {
         Question question = questions.get( questionIndex );
         question.setUsed( true );
         questionService.save( question );
+        question.setRemainingTimeSec( 60 );
         return question;
     }
 
@@ -170,8 +195,9 @@ public class HostGameService {
         Game game = this.databaseService.read( request.getGameId() );
         validatorService.validateGameBeforeAction( request.getAction(), game );
         game.setRoundStage( RoundStage.QUESTION.name() );
+        game.getStakes().getAuctionWinner().getActiveQuestion().setStartOnInit( true );
         databaseService.save( game );
-        return prepareGameResponse( game );
+        return prepareGameResponse( game, false );
     }
 
     @Transactional
@@ -189,10 +215,13 @@ public class HostGameService {
                 .orElseThrow( () -> new BubbleBattleException( "Team data is not match to auctionWinner" ) );
         validateBeforeSell( data, purchaser );
 
+        auctionWinner.getActiveQuestion().setRemainingTimeSec( 60 );
+        auctionWinner.getActiveQuestion().setStartOnInit( true );
+
         game.subtractBubbles( data.getTeamColor(), data.getPrice() );
         game.getStakes().getAuctionWinner().subtractBubbles( data.getPrice() );
         databaseService.save( game );
-        return prepareGameResponse( game );
+        return prepareGameResponse( game, false );
     }
 
     private void validateBeforeSell(SellAnswersRequest data, Team purchaser) {
@@ -209,7 +238,6 @@ public class HostGameService {
     private void updateGameForSpecialCategories(Game game) {
         log.info( "Action ANSWER_THE_QUESTION performed" );
         game.setRoundStage( RoundStage.AFTER_ANSWER.name() );
-        game.setCurrentCategory( null );
         updateGameAfterWrong( game );
         game.getStakes().setBubbleAmount( 0 );
     }
@@ -224,7 +252,7 @@ public class HostGameService {
         String auctionWinnerColor = game.getStakes().getAuctionWinner().getColor();
         if (!data.getTeamColor().name().equals( auctionWinnerColor )) {
             throw new BubbleBattleException( String.format(
-                    "Auction winner color (%s) it not match requested teamColor %s",
+                    "AuctionHistory winner color (%s) it not match requested teamColor %s",
                     auctionWinnerColor,
                     data.getTeamColor() )
             );
@@ -235,8 +263,11 @@ public class HostGameService {
         } else {
             updateGameAfterWrong( game );
         }
+
+        game.getStakes().getAuctionWinner().getActiveQuestion().setRemainingTimeSec( 0 );
+        game.getStakes().getAuctionWinner().getActiveQuestion().setStartOnInit( false );
         databaseService.save( game );
-        return prepareGameResponse( game );
+        return prepareGameResponse( game, false );
     }
 
     private void updateGameAfterWrong(Game game) {
@@ -257,7 +288,8 @@ public class HostGameService {
 
     private void clearActiveQuestion(Game game) {
         Optional.ofNullable( game.getStakes().getAuctionWinner() ).ifPresent( x -> {
-            if(x.getActiveQuestion().isAnsweredCorrect()) {
+            if (SpecialCategory.getByValue( game.getCurrentCategory() ).isPresent() &&
+                    Optional.ofNullable( x.getActiveQuestion() ).map( Question::isAnsweredCorrect ).orElse( false )) {
                 game.getStakes().setBubbleAmount( 0 );
             }
             x.setActiveQuestion( null );
@@ -270,14 +302,26 @@ public class HostGameService {
         validatorService.validateGameBeforeAction( request.getAction(), game );
 
         game.setCurrentCategory( null );
+        Optional<Team> auctionWinner = Optional.ofNullable( game.getStakes().getAuctionWinner() );
 
+        auctionWinner
+                .flatMap( team -> game.getTeams()
+                        .stream()
+                        .filter( t -> t.getColor().equals( team.getColor() ) )
+                        .findFirst()
+                        .flatMap( t -> Optional.ofNullable( team.getActiveQuestion() ) ) )
+                .ifPresent( q -> {
+                    if (q.isAnsweredCorrect()) {
+                        game.getStakes().setBubbleAmount( 0 );
+                    }
+                } );
         clearActiveQuestion( game );
 
         game.setRoundStage( RoundStage.ROUND_SUMMARY.name() );
         game.checkTeamsAfterRound();
         game.incrementRoundNumber();
         databaseService.save( game );
-        return prepareGameResponse( game );
+        return prepareGameResponse( game, game.getStakes().getBubbleAmount() == 0    );
     }
 
     @Transactional
@@ -290,21 +334,21 @@ public class HostGameService {
         game.prepareTeamsToFinal();
         game.getStakes().setBubbleAmount( 0 );
         databaseService.save( game );
-        return prepareGameResponse( game );
+        return prepareGameResponse( game, false );
     }
 
-
+    @Transactional
     public void correctBubbles(CorrectBubblesRequest request) {
         String gameId = request.getGameId();
         Game game = databaseService.read( gameId );
 
-        if(request.getTeamColor().equals( "STAKES" )) {
-            updateStakesAmount(game.getStakes(), request.getBubblesAmount());
+        if (request.getTeamColor().equals( "STAKES" )) {
+            updateStakesAmount( game.getStakes(), request.getBubblesAmount() );
         } else {
             game.getTeams().stream()
                     .filter( t -> t.isActive() && t.getColor().equals( request.getTeamColor() ) )
                     .findFirst()
-                    .ifPresent( team -> updateTeamBubbles(team,request.getBubblesAmount()) );
+                    .ifPresent( team -> updateTeamBubbles( team, request.getBubblesAmount() ) );
         }
 
         databaseService.save( game );
@@ -322,5 +366,65 @@ public class HostGameService {
     private void updateTeamBubbles(Team team, int bubblesAmount) {
         int newBubblesAmount = team.getBubbleAmount() + bubblesAmount;
         team.setBubbleAmount( Math.max( newBubblesAmount, 0 ) );
+    }
+
+    @Transactional
+    public GameResponse finishGame(PerformActionRequest request) {
+        Game game = this.databaseService.read( request.getGameId() );
+        validatorService.validateGameBeforeAction( request.getAction(), game );
+
+        Optional<Team> optionalWinner = game.getTeams().stream()
+                .filter( Team::isActive )
+                .max( Comparator.comparing( Team::getBubbleAmount ) );
+
+        if (optionalWinner.isEmpty()) {
+            throw new BubbleBattleException( "Cannot find winner" );
+        }
+
+        Team winner = optionalWinner.get();
+
+        game.getTeams().stream()
+                .filter( team -> !team.getColor().equals( winner.getColor() ) )
+                .forEach( team -> team.setActive( false ) );
+
+
+        winner.setBubbleAmount( winner.getBubbleAmount() + game.getStakes().getBubbleAmount() );
+        game.getStakes().setBubbleAmount( 0 );
+        game.getStakes().setAuctionWinner( null );
+        game.updateTeam( winner );
+        game.setRoundStage( RoundStage.GAME_FINISHED.name() );
+
+        databaseService.save( game );
+        return prepareGameResponse( game, false );
+    }
+
+    @Transactional
+    public void reverseRestoreAuction(ReverseRestoreAuctionRequest request) {
+        Game game = this.databaseService.read( request.getGameId() );
+        validatorService.validateGameBeforeAction( Action.REVERSE_RESTORE_AUCTION, game );
+        auctionDatabaseService.saveHistory( game, request.getOption() );
+        game.updateTeamsByCurrentHistory();
+
+        databaseService.save( game );
+        GameResponse gameResponse = mapper.map( game );
+        gameResponse.markHighestStakes( gameResponse.getTeams() );
+        SseEmitterManager.sendSseEventToClients( game.getId(), gameResponse );
+    }
+
+    @Transactional
+    public GameResponse startStopQuestionTimer(PerformActionRequest request) {
+        Game game = this.databaseService.read( request.getGameId() );
+        validatorService.validateGameBeforeAction( Action.START_STOP_QUESTION_TIMER, game );
+
+        StartStopQuestionTimerRequest data = (StartStopQuestionTimerRequest) request;
+
+
+        game.getStakes().getAuctionWinner().getActiveQuestion().setRemainingTimeSec( data.getSecondsRemaining() );
+        game.getStakes().getAuctionWinner().getActiveQuestion().setStartOnInit( data.isStart() );
+
+
+        databaseService.save( game );
+        return prepareGameResponse( game, false );
+
     }
 }

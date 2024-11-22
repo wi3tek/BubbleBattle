@@ -29,7 +29,10 @@ public class Question  {
     private List<Answer> answers;
     private boolean used;
     private String category;
-//    private int remainingTime; TODO do przemyślenia
+    private String imageUrl;
+    private String hostFacts;
+    private int remainingTimeSec;
+    private boolean startOnInit;
 
     @CreatedDate
     private LocalDateTime creationDate;

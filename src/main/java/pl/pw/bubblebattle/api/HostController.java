@@ -5,12 +5,10 @@ import org.springframework.web.bind.annotation.*;
 import pl.pw.bubblebattle.api.model.CorrectBubblesRequest;
 import pl.pw.bubblebattle.api.model.GameResponse;
 import pl.pw.bubblebattle.api.model.RaiseStakesRequest;
+import pl.pw.bubblebattle.api.model.ReverseRestoreAuctionRequest;
 import pl.pw.bubblebattle.api.model.actions.PerformActionRequest;
 import pl.pw.bubblebattle.infrastructure.exception.BubbleBattleException;
-import pl.pw.bubblebattle.service.AuctionService;
-import pl.pw.bubblebattle.service.GameService;
-import pl.pw.bubblebattle.service.HostGameService;
-import pl.pw.bubblebattle.service.PerformActionManager;
+import pl.pw.bubblebattle.service.*;
 
 @RestController
 @RequestMapping("/bubble-battle/api/host")
@@ -52,5 +50,14 @@ public class HostController {
             @RequestBody CorrectBubblesRequest request
     ) {
         hostGameService.correctBubbles( request );
+    }
+
+
+    @PostMapping("/reverseRestoreAuction")
+    @CrossOrigin
+    public void reverseRestoreAuction(
+            @RequestBody ReverseRestoreAuctionRequest request
+    ) {
+        hostGameService.reverseRestoreAuction( request );
     }
 }

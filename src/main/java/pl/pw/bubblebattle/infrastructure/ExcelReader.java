@@ -21,7 +21,6 @@ import java.util.List;
 public class ExcelReader {
 
     private static final String TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-//    private static final String[] HEADERS = {"ID", "QUESTION", "CORRECT_ANSWER", "ANSWER_1", "ANSWER_2", "ANSWER_3", "CATEGORY"};
     private static final String SHEET = "PYTANIA";
 
     public static boolean hasExcelFormat(MultipartFile file) {
@@ -34,7 +33,7 @@ public class ExcelReader {
         try {
             workbook = new XSSFWorkbook( is );
         } catch (IOException e) {
-            throw new BubbleBattleException( "Error during opening workbook",e );
+            throw new BubbleBattleException( "Error during opening workbook", e );
         }
 
         Sheet sheet = workbook.getSheet( SHEET );
@@ -57,7 +56,7 @@ public class ExcelReader {
                 Cell currentCell = cellsInRow.next();
                 switch (cellIdx) {
                     case 0:
-                        question.setExcelId((int) currentCell.getNumericCellValue() );
+                        question.setExcelId( (int) currentCell.getNumericCellValue() );
                         break;
                     case 1:
                         question.setValue( currentCell.getStringCellValue() );
@@ -71,19 +70,26 @@ public class ExcelReader {
                     case 6:
                         question.setCategory( currentCell.getStringCellValue() );
                         break;
+                    case 7:
+                        question.setImageUrl( currentCell.getStringCellValue() );
+                        break;
+                    case 8:
+                        question.setHostFacts( currentCell.getStringCellValue() );
+                        break;
                     default:
                         break;
                 }
                 cellIdx++;
             }
 
+            question.setRemainingTimeSec( 0 );
             questions.add( question );
         }
 
         try {
             workbook.close();
         } catch (Exception e) {
-            throw new BubbleBattleException( "Error during closing stream",e );
+            throw new BubbleBattleException( "Error during closing stream", e );
         }
 
         return questions;

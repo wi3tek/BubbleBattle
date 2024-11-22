@@ -20,7 +20,10 @@ import pl.pw.bubblebattle.api.model.enums.Action;
         @JsonSubTypes.Type(value = SellAnswersRequest.class, name = "SELL_ANSWERS"),
         @JsonSubTypes.Type(value = AnswerTheQuestionRequest.class, name = "ANSWER_THE_QUESTION"),
         @JsonSubTypes.Type(value = FinishRoundRequest.class, name = "FINISH_ROUND"),
-        @JsonSubTypes.Type(value = GoToTheFinalRequest.class, name = "GO_TO_THE_FINAL")
+        @JsonSubTypes.Type(value = GoToTheFinalRequest.class, name = "GO_TO_THE_FINAL"),
+        @JsonSubTypes.Type(value = EndGameRequest.class, name = "FINISH_GAME"),
+        @JsonSubTypes.Type(value = InitBubblesRequest.class, name = "INIT_BUBBLES"),
+        @JsonSubTypes.Type(value = StartStopQuestionTimerRequest.class, name = "START_STOP_QUESTION_TIMER")
 })
 public class PerformActionRequest {
 

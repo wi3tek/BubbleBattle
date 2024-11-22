@@ -28,17 +28,22 @@ public class HostActionService {
             };
         }
 
-        if (RoundStage.ROUND_SUMMARY.equals( roundStage ) && roundNumber == 0 && GameStage.REGULAR.equals( gameStage )) {
-            return List.of( prepareHostAction( Action.START_GAME ) );
-        }
-
         if (GameStage.REGULAR.equals( gameStage ) && roundNumber > GameStage.REGULAR.getMaxRoundNumber()) {
             return List.of( prepareHostAction( Action.GO_TO_THE_FINAL ) );
+        }
+
+        if (RoundStage.GAME_FINISHED.equals( roundStage ) ) {
+            return List.of();
         }
 
         if (GameStage.FINAL.equals( gameStage ) && roundNumber > GameStage.FINAL.getMaxRoundNumber()) {
             return List.of( prepareHostAction( Action.FINISH_GAME ) );
         }
+
+        if(RoundStage.ROUND_SUMMARY.equals( roundStage ) && GameStage.FINAL.equals(  gameStage)) {
+            return List.of(prepareHostAction(  Action.CHOOSE_CATEGORY));
+        }
+
 
         return roundStage.getActions().stream()
                 .map( this::prepareHostAction )

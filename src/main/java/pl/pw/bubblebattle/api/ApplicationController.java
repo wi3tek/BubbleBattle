@@ -42,7 +42,9 @@ public class ApplicationController {
     }
 
     @PostMapping("/excel/upload")
-    public ResponseEntity<Object> uploadFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Object> uploadFile(
+            @RequestParam("file") MultipartFile file
+    ) {
         String message = "";
         if (ExcelReader.hasExcelFormat(file)) {
             try {

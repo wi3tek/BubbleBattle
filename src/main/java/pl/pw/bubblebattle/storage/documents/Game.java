@@ -32,6 +32,7 @@ public class Game {
     private Stakes stakes;
     private String currentCategory;
     private int highestBidAmount;
+    private AuctionHistory currentAuctionHistory;
 
     @CreatedDate
     private LocalDateTime creationDate;
@@ -98,7 +99,7 @@ public class Game {
 
     public void updateTeamBubbles(TeamColor teamColor, int bubbleAmount) {
         this.teams.stream().filter( Team::isActive )
-                .filter(team -> teamColor.name().equals( team.getColor() ))
+                .filter( team -> teamColor.name().equals( team.getColor() ) )
                 .findFirst()
                 .ifPresent( team -> team.setBubbleAmount( team.getBubbleAmount() + bubbleAmount ) );
     }
@@ -115,7 +116,7 @@ public class Game {
     public void checkTeamsAfterRound() {
         this.teams.stream()
                 .filter( Team::isActive )
-                .filter(team -> team.getBubbleAmount() <600 )
+                .filter( team -> team.getBubbleAmount() < 600 )
                 .forEach( team -> team.setActive( false ) );
     }
 
@@ -126,16 +127,20 @@ public class Game {
                 .max()
                 .orElseThrow( () -> new BubbleBattleException( "Cannot estimate max bubbles amount" ) );
 
-        if(
+        if (
                 this.teams.stream()
-                .filter( Team::isActive)
-                .filter(team -> team.getBubbleAmount()== maxBubblesAmount)
-                .count() > 2
+                        .filter( Team::isActive )
+                        .filter( team -> team.getBubbleAmount() == maxBubblesAmount )
+                        .count() > 2
         ) {
-            throw new BubbleBattleException( "More than one team has max bubbles amount "+maxBubblesAmount );
+            throw new BubbleBattleException( "More than one team has max bubbles amount " + maxBubblesAmount );
         }
 
-        int currentStakesAmount = this.stakes.getBubbleAmount();
+        int currentStakesAmount = this.getCurrentAuctionHistory().getAuctionHistoryItemList().stream()
+                .filter( x -> TeamColor.STAKES.name().equals( x.getTeamColor() ) )
+                .findFirst()
+                .map( AuctionHistoryItem::getBubblesAmount )
+                .orElseThrow( () -> new BubbleBattleException( "There is no auction history item for Stakes!" ) );
         int finalBubblesAmount = maxBubblesAmount;
 
         for (Team team : teams) {
@@ -144,7 +149,7 @@ public class Game {
             }
 
             if (team.getBubbleAmount() == maxBubblesAmount) {
-                if(!team.getColor().equals( this.stakes.getAuctionWinner().getColor())) {
+                if (!team.getColor().equals( this.stakes.getAuctionWinner().getColor() )) {
                     team.addBubbles( currentStakesAmount );
                 }
                 finalBubblesAmount = team.getBubbleAmount();
@@ -153,13 +158,33 @@ public class Game {
 
         int masterBubblesAmount = finalBubblesAmount;
         this.teams.stream()
-                .filter( team -> TeamColor.BLACK.name().equals(  team.getColor() ))
+                .filter( team -> TeamColor.BLACK.name().equals( team.getColor() ) )
                 .findFirst()
                 .ifPresent( team -> {
                     team.setActive( true );
                     team.setBubbleAmount( masterBubblesAmount );
-                });
+                } );
 
         this.stakes.setAuctionWinner( null );
+    }
+
+    public void updateTeamsByCurrentHistory() {
+        AuctionHistory auctionHistory = Optional.ofNullable( getCurrentAuctionHistory() )
+                .orElseThrow( () -> new BubbleBattleException( "There is no actual auction history" ) );
+        this.setHighestBidAmount( auctionHistory.getHighestBidAmount() );
+        this.teams.forEach( team -> updateTeam(team,auctionHistory.getAuctionHistoryItemList() ) );
+    }
+
+    private void updateTeam(Team team, List<AuctionHistoryItem> historyItems) {
+        for (AuctionHistoryItem historyItem: historyItems) {
+            if(TeamColor.STAKES.name().equals( historyItem.getTeamColor() )) {
+                this.stakes.setBubbleAmount( historyItem.getBubblesAmount() );
+                continue;
+            }
+            if(team.getColor().equals( historyItem.getTeamColor() )) {
+                team.setBubbleAmount( historyItem.getBubblesAmount() );
+                team.setBubbleStakesAmount( historyItem.getBidAmount() );
+            }
+        }
     }
 }

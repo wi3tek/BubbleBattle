@@ -16,6 +16,7 @@ public class PerformActionManager {
     public GameResponse performAction(PerformActionRequest request) {
         return switch (request.getAction()) {
             case START_GAME -> hostGameService.startGame( request.getGameId() );
+            case INIT_BUBBLES -> hostGameService.initBubbles( request.getGameId() );
             case CHOOSE_CATEGORY -> hostGameService.chooseCategory(request);
             case START_AUCTION -> hostGameService.startAuction(request);
             case FINISH_AUCTION -> hostGameService.finishAuction(request);
@@ -25,6 +26,8 @@ public class PerformActionManager {
             case ANSWER_THE_QUESTION -> hostGameService.updateQuestionResult(request);
             case FINISH_ROUND -> hostGameService.finishRound(request);
             case GO_TO_THE_FINAL -> hostGameService.goToTheFinal(request);
+            case FINISH_GAME -> hostGameService.finishGame(request);
+            case START_STOP_QUESTION_TIMER -> hostGameService.startStopQuestionTimer(request);
             default -> throw new BubbleBattleException( "Action not implemented: "+ request.getAction() );
         };
     }

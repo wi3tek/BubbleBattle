@@ -2,16 +2,18 @@ package pl.pw.bubblebattle.service;
 
 import lombok.RequiredArgsConstructor;
 import org.mapstruct.factory.Mappers;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pl.pw.bubblebattle.api.model.GameResponse;
 import pl.pw.bubblebattle.api.model.RaiseStakesRequest;
+import pl.pw.bubblebattle.api.model.enums.AuctionHistoryOption;
 import pl.pw.bubblebattle.api.model.enums.RoundStage;
 import pl.pw.bubblebattle.infrastructure.SseEmitterManager;
 import pl.pw.bubblebattle.infrastructure.exception.BubbleBattleException;
 import pl.pw.bubblebattle.service.mapper.BubbleBattleMapper;
 import pl.pw.bubblebattle.storage.documents.Game;
 import pl.pw.bubblebattle.storage.documents.Team;
+import pl.pw.bubblebattle.storage.service.AuctionDatabaseService;
 import pl.pw.bubblebattle.storage.service.GameDatabaseService;
 
 @Service
@@ -21,9 +23,10 @@ public class AuctionService {
     private final GameDatabaseService databaseService;
     private final BubbleBattleMapper mapper = Mappers.getMapper( BubbleBattleMapper.class );
     private final RoundStageService roundStageService;
+    private final AuctionDatabaseService auctionDatabaseService;
 
-    @Async
-    public synchronized void raiseStakes(RaiseStakesRequest request) {
+    @Transactional
+    public void raiseStakes(RaiseStakesRequest request) {
         String gameId = request.getGameId();
         Game game = databaseService.read( gameId );
         if (!RoundStage.AUCTION.name().equals( game.getRoundStage() )) {
@@ -61,6 +64,7 @@ public class AuctionService {
         game.setHighestBidAmount( team.getBubbleStakesAmount() );
 
         roundStageService.updateAuctionStatus( game ,request.isFinalBid(), request.getTeamColor());
+        auctionDatabaseService.saveHistory( game, AuctionHistoryOption.RAISE_STAKES );
         databaseService.save( game );
 
         GameResponse gameResponse = mapper.map( game );

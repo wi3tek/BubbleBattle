@@ -19,6 +19,10 @@ public class QuestionData {
     private String category;
     private List<AnswerData> answers;
     private boolean answeredCorrect;
+    private String imageUrl;
+    private String hostFacts;
+    private boolean startOnInit;
+    private int remainingTimeSec;
 
     public void shuffleAnswers() {
         if( answers == null) {

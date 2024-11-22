@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 public enum Action {
 
     START_GAME("Rozpocznij grę",0),
+    INIT_BUBBLES("Rozdaj bombelki",0),
+    START_STOP_QUESTION_TIMER("Zatrzymaj zegar",0),
     CHOOSE_CATEGORY("Wybierz kategorię",1),
     START_AUCTION("Rozpocznij licytację",2),
     FINISH_AUCTION("Zakończ licytację",3),
@@ -17,7 +19,8 @@ public enum Action {
     ANSWER_THE_QUESTION("Odpowiedz na pytanie",7),
     FINISH_ROUND("Zakończ rundę",8),
     GO_TO_THE_FINAL("Przejdź do finału",9),
-    FINISH_GAME("Zakończ grę",10);
+    FINISH_GAME("Zakończ grę",10),
+    REVERSE_RESTORE_AUCTION("Cofnij / przywróć stan licytacji", 99);
 
     private final String actionDescription;
     private final int order;

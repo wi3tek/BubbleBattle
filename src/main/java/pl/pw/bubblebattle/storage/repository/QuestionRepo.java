@@ -5,12 +5,10 @@ import org.springframework.stereotype.Repository;
 import pl.pw.bubblebattle.storage.documents.Question;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
-public interface QuestionRepo extends MongoRepository<Question, Integer> {
+public interface QuestionRepo extends MongoRepository<Question, String> {
 
-    Optional<Question> findById(String id);
     List<Question> findByCategory(String category);
 
 }

@@ -9,7 +9,7 @@ import pl.pw.bubblebattle.api.model.enums.RoundStage;
 import pl.pw.bubblebattle.api.model.enums.TeamColor;
 import pl.pw.bubblebattle.storage.documents.*;
 
-import java.util.Arrays;
+import java.util.Optional;
 
 @Mapper(componentModel = "spring")
 public interface BubbleBattleMapper {
@@ -24,7 +24,23 @@ public interface BubbleBattleMapper {
     @Mapping(source = "stakes.bubbleAmount", target = "bubbleStakes")
     @Mapping(source = "currentCategory", target = "currentCategory")
     @Mapping( source = "stakes.auctionWinner", target = "auctionWinner")
+    @Mapping(target = "possibleForward", source = "currentAuctionHistory", qualifiedByName = "mapPossibleForward")
+    @Mapping(target = "possibleBackward", source = "currentAuctionHistory", qualifiedByName = "mapPossibleBackward")
     GameResponse map(Game source);
+
+    @Named("mapPossibleForward")
+    default boolean mapPossibleForward (AuctionHistory currentAuctionHistory) {
+        return Optional.ofNullable(currentAuctionHistory)
+                .map( ah -> ah.getNextHistoryId() != null )
+                .orElse( false );
+    }
+
+    @Named("mapPossibleBackward")
+    default boolean mapPossibleBackward (AuctionHistory currentAuctionHistory) {
+        return Optional.ofNullable(currentAuctionHistory)
+                .map( ah -> ah.getPreviousHistoryId() != null )
+                .orElse( false );
+    }
 
     @Mapping( source = "color", target = "teamColor")
     TeamData map(Team source);
@@ -32,10 +48,10 @@ public interface BubbleBattleMapper {
     default Game map(CreateGameRequest request) {
         return Game.builder()
                 .name( request.getName() )
-                .roundStage( RoundStage.ROUND_SUMMARY.name() )
+                .roundStage( RoundStage.NEW_GAME.name() )
                 .roundNumber( 0 )
                 .gameStage( GameStage.REGULAR.name() )
-                .teams( Arrays.stream( TeamColor.values() )
+                .teams(TeamColor.getValuesWithoutStakes().stream()
                         .map( teamColor -> Team.builder()
                                 .activeQuestion( null )
                                 .bubbleAmount( START_BUBBLE_AMOUNT )

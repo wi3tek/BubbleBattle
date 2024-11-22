@@ -40,6 +40,9 @@ public class GameResponse extends BaseResponse {
     private String currentCategory;
     private int highestBidAmount;
     private TeamData auctionWinner;
+    private boolean possibleForward;
+    private boolean possibleBackward;
+    private boolean moneyUp;
 
     public void markHighestStakes(List<TeamData> teamData) {
         int highestStakes = teamData.stream()
@@ -63,10 +66,10 @@ public class GameResponse extends BaseResponse {
     public void sortActiveByOrder() {
         Predicate<TeamData> predicate = x -> {
             if(this.gameStage.equals( GameStage.REGULAR )) {
-                return REGULAR_GAME_STAGE_TEAM_COLORS.contains( x.getTeamColor() );
+                return REGULAR_GAME_STAGE_TEAM_COLORS.contains( x.getTeamColor() ) && !TeamColor.STAKES.equals( x.getTeamColor() );
             }
 
-            return x.isActive();
+            return x.isActive() && !TeamColor.STAKES.equals( x.getTeamColor() );
         };
         this.setTeams( this.teams.stream()
                 .filter( predicate )
