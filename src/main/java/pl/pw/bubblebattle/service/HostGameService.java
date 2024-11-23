@@ -106,7 +106,7 @@ public class HostGameService {
 
         databaseService.save( game );
 
-        return prepareGameResponse( game, false );
+        return prepareGameResponse( game, true );
     }
 
     @Transactional
